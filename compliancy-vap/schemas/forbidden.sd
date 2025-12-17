@@ -1,0 +1,38 @@
+schema forbidden {
+
+  document forbidden {
+
+    field item_id type string {
+      indexing: summary
+    }
+
+    field source_path type string {
+      indexing: summary
+    }
+
+    # Change 768 to your embedding dimension
+    field image_embedding type tensor<float>(x[768]) {
+      indexing: summary | attribute | index
+
+      attribute {
+        distance-metric: prenormalized-angular
+      }
+
+      index {
+        hnsw {
+          max-links-per-node: 16
+          neighbors-to-explore-at-insert: 100
+        }
+      }
+    }
+  }
+
+  rank-profile closeness inherits default {
+    inputs {
+      query(q) tensor<float>(x[768])
+    }
+    first-phase {
+      expression: closeness(field, image_embedding)
+    }
+  }
+}
